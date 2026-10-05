@@ -10,7 +10,7 @@ CORS(app)
 
 @app.route("/tts", methods=["POST"])
 def tts():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     text = data.get("text", "").strip()
     voice = data.get("voice", "en-IN-NeerjaNeural")
@@ -29,7 +29,11 @@ def tts():
         audio.seek(0)
         return audio
 
-    audio = asyncio.run(generate())
+    try:
+        audio = asyncio.run(generate())
+    except Exception as e:
+        app.logger.exception("Edge TTS failed")
+        return {"error": "TTS generation failed", "details": str(e)}, 502
 
     return send_file(
         audio,
